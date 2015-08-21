@@ -49,15 +49,14 @@ def get_module_config(filename):
 def app_for_script(script):
   """Returns the WSGI app specified in the input string, or None on failure."""
   try:
-    app, filename, err = wsgi.LoadObject(script)  # pylint: disable=unused-variable
+    app, unused_filename, err = wsgi.LoadObject(script)
+    if err:
+      raise err
   except ImportError as e:
     # Despite nominally returning an error object, LoadObject will sometimes
-    # just result in an exception. Since we're already processing the err
-    # object, we might as well just use that variable to store the exception.
-    err = e
-  if err:
-    # Log the exception but do not reraise.
-    logging.exception('Failed to import %s: %s', script, err)
+    # just result in an exception. By raising the err object if it exists, we
+    # catch either.
+    logging.exception('Failed to import %s', script)
     return None
   else:
     return app_wrapped_in_user_middleware(app)
