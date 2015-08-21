@@ -110,8 +110,8 @@ def static_app_for_handler(handler):
       # modify the url regex accordingly. See the appinfo.URLMap docstring for
       # more information.
       regex = static_dir_url(handler)
-      files = "{dir}{backref}".format(dir=handler.static_dir, backref=r'/\1')
-      upload = "{dir}{re}".format(dir=handler.static_dir, re='/.*')
+      files = '{dir}{backref}'.format(dir=handler.static_dir, backref=r'/\1')
+      upload = '{dir}{re}'.format(dir=handler.static_dir, re='/.*')
     else:
       # Neither static_files nor static_dir is set; log an error and return.
       logging.error('No script, static_files or static_dir found for %s',
@@ -133,7 +133,7 @@ def static_dir_url(handler):
     A modified url regex
   """
   if not handler.script and not handler.static_files and handler.static_dir:
-    return handler.url + '/(.*)'
+    return '{url}/(.*)'.format(url=handler.url)
   else:
     return handler.url
 
