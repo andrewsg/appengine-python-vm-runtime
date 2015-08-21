@@ -144,7 +144,7 @@ def load_user_scripts_into_handlers(handlers):
   Returns:
     A list of tuples suitable for configuring the dispatcher() app,
     where the tuples are (url, app):
-      - url: The url pattern which matches this handler.
+      - url_re: The url regular expression which matches this handler.
       - app: The fully loaded app corresponding to the script.
   """
   # `if x.login == appinfo.LOGIN_OPTIONAL` disables loading handlers
@@ -156,7 +156,7 @@ def load_user_scripts_into_handlers(handlers):
        app_for_script(x.script) if x.script else static_app_for_handler(x))
       for x in handlers if x.login == appinfo.LOGIN_OPTIONAL]
   logging.info('Parsed handlers: %s',
-               [url for (url, _) in loaded_handlers])
+               [url_re for (url_re, _) in loaded_handlers])
   return loaded_handlers
 
 
