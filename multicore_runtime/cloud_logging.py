@@ -21,7 +21,6 @@ import os
 
 LOG_PATH_TEMPLATE = '/var/log/app_engine/app.{pid}.json'
 
-
 class CloudLoggingHandler(logging.FileHandler):
   """A handler that emits logs to Cloud Logging.
 
@@ -54,9 +53,10 @@ class CloudLoggingHandler(logging.FileHandler):
     payload = {
         'message': message,
         'timestamp': {'seconds': int(record.created),
-                      'nanos': int(math.modf(record.created)[0] * 1000000000)},
+                      'nanos': int(math.modf(record.created)[0] * 1e9)},
         'thread': record.thread,
-        'severity': record.levelname,}
+        'severity': record.levelname,
+        }
 
     # Now make a best effort to add the trace id.
     # First, try to get the trace id from the 'extras' of the record.
