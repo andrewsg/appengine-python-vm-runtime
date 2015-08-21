@@ -28,7 +28,7 @@ def dispatcher(handlers):
   Args:
     handlers: a list of handlers as produced by
       wsgi_utils.load_user_scripts_into_handlers: a list of tuples of
-      (url, script, app).
+      (url, app).
 
   Returns:
     A WSGI app that dispatches to the user apps specified in the input.
@@ -37,7 +37,7 @@ def dispatcher(handlers):
   def dispatch(wsgi_env, start_response):
     """Handle one request."""
     request = Request(wsgi_env)
-    for url, script, app in handlers:  # pylint: disable=unused-variable
+    for url, app in handlers:
       matcher = re.match(url, request.path)
       if matcher and matcher.end() == len(request.path):
         if app is not None:

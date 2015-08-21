@@ -61,18 +61,16 @@ def load_legacy_scripts_into_handlers(handlers):
 
   Returns:
     A list of tuples suitable for configuring the dispatcher() app,
-    where the tuples are (url, script, app):
+    where the tuples are (url, app):
       - url: The url pattern which matches this handler.
-      - script: The script to serve for this handler, as a string, or None.
       - app: The fully loaded app corresponding to the script.
   """
   loaded_handlers = [
       (x.url,
-       x.script,
        legacy_app_for_script(x.script.replace('$PYTHON_LIB/', '')))
       for x in handlers]
   logging.info('Parsed handlers: %s',
-               [(url, script) for (url, script, _) in loaded_handlers])
+               [url for (url, _) in loaded_handlers])
   return loaded_handlers
 
 
