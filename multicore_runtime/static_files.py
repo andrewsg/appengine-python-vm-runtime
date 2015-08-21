@@ -14,6 +14,7 @@
 #
 """Static file serving functionality invoked by wsgi_config.py."""
 
+import httplib
 import logging
 import mimetypes
 import os
@@ -55,7 +56,7 @@ def static_app_for_regex_and_files(regex, files, upload, mime_type=None):
     # protection as well.
     if not re.match(upload, os.path.normpath(filename)):
       logging.warn('Requested filename %s not in `upload`', filename)
-      return Response(status=404)
+      return Response(status=httplib.NOT_FOUND)
 
     try:
       fp = open(filename, 'rb')
@@ -63,7 +64,7 @@ def static_app_for_regex_and_files(regex, files, upload, mime_type=None):
       # directly.
     except IOError:
       logging.warn('Requested non-existent filename %s', filename)
-      return Response(status=404)
+      return Response(status=httplib.NOT_FOUND)
 
     wrapped_file = wrap_file(request.environ, fp)
     return Response(wrapped_file, direct_passthrough=True,

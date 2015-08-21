@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import httplib
 import unittest
 
 from mock import patch
@@ -43,7 +44,7 @@ class AppConfigTestCase(unittest.TestCase):
       app = app_for_script('wsgi_config_test.salutation_world')
     client = Client(app, Response)
     response = client.get('/?salutation=Hello')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     self.assertEqual(response.data, 'Hello World!')
 
   def test_app_for_script_with_middleware(self):
@@ -52,5 +53,5 @@ class AppConfigTestCase(unittest.TestCase):
       app = app_for_script('wsgi_config_test.salutation_world')
     client = Client(app, Response)
     response = client.get('/?salutation=Hello')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     self.assertEqual(response.data, 'Goodbye World!')

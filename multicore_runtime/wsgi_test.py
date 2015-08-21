@@ -13,7 +13,7 @@
 # limitations under the License.
 #
 # pylint: disable=g-import-not-at-top
-
+import httplib
 import json
 import logging
 from multiprocessing.pool import ThreadPool
@@ -133,20 +133,20 @@ class MetaAppTestCase(unittest.TestCase):
 
   def test_hello(self):
     response = self.client.get('/hello')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     self.assertEqual(response.data, HELLO_STRING)
 
   def test_failure(self):
     response = self.client.get('/failure')
-    self.assertEqual(response.status_code, 500)
+    self.assertEqual(response.status_code, httplib.INTERNAL_SERVER_ERROR)
 
   def test_notfound(self):
     response = self.client.get('/notfound')
-    self.assertEqual(response.status_code, 404)
+    self.assertEqual(response.status_code, httplib.NOT_FOUND)
 
   def test_health(self):
     response = self.client.get('/_ah/health')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
 
   # Test PATH is present in env. If this breaks, each request is properly
   # wiping the environment but not properly reconstituting the frozen initial
@@ -159,46 +159,46 @@ class MetaAppTestCase(unittest.TestCase):
   def test_login_required(self):
     # Login routes are temporarily disabled.
     response = self.client.get('/login')
-    self.assertEqual(response.status_code, 404)
+    self.assertEqual(response.status_code, httplib.NOT_FOUND)
 
   def test_login_admin(self):
     # Login routes are temporarily disabled.
     response = self.client.get('/admin')
-    self.assertEqual(response.status_code, 404)
+    self.assertEqual(response.status_code, httplib.NOT_FOUND)
 
   def test_static_file(self):
     response = self.client.get('/favicon.ico')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     with open('test_statics/favicon.ico') as f:
       self.assertEqual(response.data, f.read())
 
   def test_static_file_mime_type(self):
     response = self.client.get('/faketype.ico')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     with open('test_statics/favicon.ico') as f:
       self.assertEqual(response.data, f.read())
     self.assertEqual(response.mimetype, 'application/fake_type')
 
   def test_static_file_wildcard(self):
     response = self.client.get('/wildcard_statics/favicon.ico')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     with open('test_statics/favicon.ico') as f:
       self.assertEqual(response.data, f.read())
 
   def test_static_file_wildcard_404(self):
     response = self.client.get('/wildcard_statics/no_file')
-    self.assertEqual(response.status_code, 404)
+    self.assertEqual(response.status_code, httplib.NOT_FOUND)
 
   def test_static_file_wildcard_directory_traversal(self):
     # Try to fetch some files outside of the "upload" regex using path traversal
     response = self.client.get('/wildcard_statics/../../setup.py')
-    self.assertEqual(response.status_code, 404)
+    self.assertEqual(response.status_code, httplib.NOT_FOUND)
     response = self.client.get('/wildcard_statics/../__init__.py')
-    self.assertEqual(response.status_code, 404)
+    self.assertEqual(response.status_code, httplib.NOT_FOUND)
 
   def test_static_dir(self):
     response = self.client.get('/static_dir/favicon.ico')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     with open('test_statics/favicon.ico') as f:
       self.assertEqual(response.data, f.read())
 
@@ -277,7 +277,7 @@ class MetaAppTestCase(unittest.TestCase):
   # be cast to a list or sorted.
   def test_env_sort(self):
     response = self.client.get('/sortenv')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     # If the handler didn't crash, the regression test passed. No need to
     # validate contents extensively.
     self.assertIn('REQUEST_METHOD', response.data)

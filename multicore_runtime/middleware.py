@@ -14,6 +14,7 @@
 #
 """WSGI middleware to wrap the dispatcher, and supporting functions."""
 
+import httplib
 import logging
 import os
 
@@ -178,7 +179,7 @@ def health_check_middleware(app):
   def health_check_intercept_wrapper(wsgi_env, start_response):  # pylint: disable=missing-docstring
     request = Request(wsgi_env)
     if request.path == '/_ah/health':  # Only intercept exact matches.
-      return Response('healthy', status=200)(wsgi_env, start_response)
+      return Response('healthy', status=httplib.OK)(wsgi_env, start_response)
     else:
       return app(wsgi_env, start_response)
 

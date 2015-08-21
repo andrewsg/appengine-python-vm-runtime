@@ -14,6 +14,7 @@
 #
 """A WSGI app that, once configured, dispatches requests to user apps."""
 
+import httplib
 import logging
 import re
 
@@ -46,7 +47,7 @@ def dispatcher(handlers):
           # The import must have failed. This will have been logged at import
           # time. Send a 500 error response.
           response = Response('<h1>500 Internal Server Error</h1>\n',
-                              status=500)
+                              status=httplib.INTERNAL_SERVER_ERROR)
           return response(wsgi_env, start_response)
     logging.error('No handler found for %s', request.path)
     start_response('404 Not Found', [])

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import httplib
 import tempfile
 import unittest
 
@@ -29,5 +30,5 @@ class LegacyAppConfigTestCase(unittest.TestCase):
         'legacy_e2e_support_test_app.py')
     client = Client(app, Response)
     response = client.get('/')
-    self.assertEqual(response.status_code, 200)
+    self.assertEqual(response.status_code, httplib.OK)
     self.assertEqual(response.data, 'Hello World!')
