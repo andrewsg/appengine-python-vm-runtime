@@ -20,7 +20,6 @@ import re
 
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
-from werkzeug.wsgi import responder
 
 def dispatcher(handlers):
   """Accepts handlers and returns a WSGI app that dispatches requests to them.
@@ -34,10 +33,9 @@ def dispatcher(handlers):
     A WSGI app that dispatches to the user apps specified in the input.
   """
 
-  @responder
-  def dispatch(wsgi_env, start_response):
+  @Request.application  # Transforms wsgi_env, start_response args into request
+  def dispatch(request):
     """Handle one request."""
-    request = Request(wsgi_env)
     for url_re, app in handlers:
       matcher = re.match(url_re, request.path)
       if matcher and matcher.end() == len(request.path):

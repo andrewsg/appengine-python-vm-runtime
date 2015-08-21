@@ -20,7 +20,6 @@ import os
 
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
-from werkzeug.wsgi import responder
 
 
 # A dict of reserved env keys; the value is used as the default if not
@@ -183,10 +182,9 @@ def health_check_middleware(app):
     The wrapped app, also a WSGI app.
   """
 
-  @responder
-  def health_check_intercept_wrapper(wsgi_env, start_response):
+  @Request.application
+  def health_check_intercept_wrapper(request):
     """Capture a request to /_ah/health and respond with 200 OK."""
-    request = Request(wsgi_env)
     if request.path == '/_ah/health':  # Only intercept exact matches.
       return Response('healthy', status=httplib.OK)
     else:
