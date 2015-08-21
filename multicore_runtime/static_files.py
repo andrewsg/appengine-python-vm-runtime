@@ -25,7 +25,8 @@ from werkzeug.wrappers import Response
 from werkzeug.wsgi import wrap_file
 
 
-def static_app_for_regex_and_files(url_re, files_mapping, upload_re, mime_type=None):
+def static_app_for_regex_and_files(url_re, files_mapping, upload_re,
+                                   mime_type=None):
   """Returns a WSGI app that serves static files.
 
   Args:
