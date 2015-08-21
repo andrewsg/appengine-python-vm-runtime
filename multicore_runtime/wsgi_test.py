@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# pylint: disable=g-import-not-at-top
 import httplib
 import json
 import logging
@@ -103,13 +102,14 @@ def wait_on_global_event(request):  # pylint: disable=unused-argument
 @Request.application
 def sort_os_environ_keys(request):  # pylint: disable=unused-argument
   # See test_env_sort method for explanation.
-  resp = ""
+  resp = ''
   for name in sorted(os.environ):
     resp += '%s=%s\n' % (name, os.environ[name])
   return Response(resp)
 
 
 class MetaAppTestCase(unittest.TestCase):
+  # pylint: disable=g-import-not-at-top
 
   def setUp(self):
     # Pre-import modules to patch them in advance.
