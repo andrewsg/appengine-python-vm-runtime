@@ -86,10 +86,7 @@ def get_add_middleware_from_appengine_config():
   """
   try:
     import appengine_config  # pylint: disable=g-import-not-at-top
-    try:
-      return appengine_config.webapp_add_wsgi_middleware
-    except AttributeError:
-      return None
+    return getattr(appengine_config, 'webapp_add_wsgi_middleware', None)
   except ImportError:
     return None
 
