@@ -49,11 +49,13 @@ class CloudLoggingHandler(logging.FileHandler):
     # First, let's just get the log string as it would normally be formatted.
     message = super(CloudLoggingHandler, self).format(record)
 
+    subsecond, second = math.modf(record.created)  # Second is a float, here.
+
     # Now assemble a dictionary with the log string as the message.
     payload = {
         'message': message,
-        'timestamp': {'seconds': int(record.created),
-                      'nanos': int(math.modf(record.created)[0] * 1e9)},
+        'timestamp': {'seconds': int(second),
+                      'nanos': int(subsecond * 1e9)},
         'thread': record.thread,
         'severity': record.levelname,
         }
