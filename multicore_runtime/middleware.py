@@ -61,7 +61,8 @@ def reset_environment_middleware(app, frozen_environment, frozen_user_env,
     The wrapped app, also a WSGI app.
   """
 
-  def reset_environment_wrapper(wsgi_env, start_response):
+  @Request.application
+  def reset_environment_wrapper(request):
     """Reset the system environment and populate it with wsgi_env."""
     # Wipe os.environ entirely.
     os.environ.clear()
@@ -77,19 +78,19 @@ def reset_environment_middleware(app, frozen_environment, frozen_user_env,
     os.environ.update(frozen_environment)
 
     # Add in wsgi_env data, including request headers.
-    os.environ.update(request_environment_for_wsgi_env(wsgi_env))
+    os.environ.update(request_environment_for_wsgi_env(request.environ))
 
     # Add in configuration data from env_config.
     os.environ.update(frozen_env_config_env)
 
     # Add reserved keys, which draw from wsgi_env as well. These have a very
     # high priority and so are added nearly last.
-    os.environ.update(reserved_env_keys_for_wsgi_env(wsgi_env))
+    os.environ.update(reserved_env_keys_for_wsgi_env(request.environ))
 
     # Tweak the environment to hide the service bridge.
-    os.environ.update(get_env_to_hide_service_bridge(wsgi_env))
+    os.environ.update(get_env_to_hide_service_bridge(request.environ))
 
-    return app(wsgi_env, start_response)
+    return app
 
   return reset_environment_wrapper
 
@@ -166,8 +167,7 @@ def get_env_to_hide_service_bridge(wsgi_env):
     output['SERVER_PORT'] = '443'
   else:
     logging.warning(
-        'Unrecognized value for HTTPS (%s), won\'t modify SERVER_PORT', https
-        )
+        'Unrecognized value for HTTPS (%s), won\'t modify SERVER_PORT', https)
 
   return output
 
