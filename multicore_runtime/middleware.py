@@ -20,8 +20,11 @@ import os
 
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
+from werkzeug.wsgi import responder
 
 
+# A dict of reserved env keys; the value is used as the default if not
+# otherwise set.
 RESERVED_ENV_KEYS = {
     'AUTH_DOMAIN': 'gmail.com',  # Default auth domain must be set.
     'DATACENTER': '',
@@ -34,7 +37,8 @@ RESERVED_ENV_KEYS = {
     'USER_ID': '',
     'USER_IS_ADMIN': '0',  # Default admin flag to explicit '0'.
     'USER_NICKNAME': '',
-    'USER_ORGANIZATION': '',}
+    'USER_ORGANIZATION': '',
+    }
 
 
 def reset_environment_middleware(app, frozen_environment, frozen_user_env,
@@ -58,7 +62,8 @@ def reset_environment_middleware(app, frozen_environment, frozen_user_env,
     The wrapped app, also a WSGI app.
   """
 
-  def reset_environment_wrapper(wsgi_env, start_response):  # pylint: disable=missing-docstring
+  def reset_environment_wrapper(wsgi_env, start_response):
+    """Reset the system environment and populate it with wsgi_env."""
     # Wipe os.environ entirely.
     os.environ.clear()
 
@@ -124,7 +129,7 @@ def reserved_env_keys_for_wsgi_env(wsgi_env):
   # Use the default value for a reserved key if the corresponding header is not
   # set, or if the header exists but its value is blank.
   for key, default in RESERVED_ENV_KEYS.iteritems():
-    value = wsgi_env.get('HTTP_X_APPENGINE_' + key)
+    value = wsgi_env.get('HTTP_X_APPENGINE_{key}'.format(key=key))
     output[key] = value or default  # Must be set to a valid value or default.
 
   return output
@@ -149,8 +154,9 @@ def get_env_to_hide_service_bridge(wsgi_env):
   # should not be shown to user code. Instead, we'll rely on the HTTP Host
   # header to retrieve the hostname used in the original request.  This mimics
   # the behavior of non-VM App Engine.
-  if 'HTTP_HOST' in wsgi_env:
-    output['SERVER_NAME'] = wsgi_env['HTTP_HOST']
+  http_host = wsgi_env.get('HTTP_HOST', None)
+  if http_host:
+    output['SERVER_NAME'] = http_host
 
   # Similarly we'll use the HTTPS flag to determine the port used in the
   # original request.
@@ -160,8 +166,9 @@ def get_env_to_hide_service_bridge(wsgi_env):
   elif https == 'on':
     output['SERVER_PORT'] = '443'
   else:
-    logging.warning('Unrecognized value for HTTPS (%s), won\'t modify '
-                    'SERVER_PORT', https)
+    logging.warning(
+        'Unrecognized value for HTTPS (%s), won\'t modify SERVER_PORT', https
+        )
 
   return output
 
@@ -176,11 +183,13 @@ def health_check_middleware(app):
     The wrapped app, also a WSGI app.
   """
 
-  def health_check_intercept_wrapper(wsgi_env, start_response):  # pylint: disable=missing-docstring
+  @responder
+  def health_check_intercept_wrapper(wsgi_env, start_response):
+    """Capture a request to /_ah/health and respond with 200 OK."""
     request = Request(wsgi_env)
     if request.path == '/_ah/health':  # Only intercept exact matches.
-      return Response('healthy', status=httplib.OK)(wsgi_env, start_response)
+      return Response('healthy', status=httplib.OK)
     else:
-      return app(wsgi_env, start_response)
+      return app
 
   return health_check_intercept_wrapper
