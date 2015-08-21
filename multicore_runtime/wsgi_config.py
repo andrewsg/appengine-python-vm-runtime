@@ -154,10 +154,17 @@ def load_user_scripts_into_handlers(handlers):
   # that require login or admin status entirely. This is a temporary
   # measure until handling of login-required handlers is implemented
   # securely.
-  loaded_handlers = [
-      (x.url if x.script or x.static_files else static_dir_url(x),
-       app_for_script(x.script) if x.script else static_app_for_handler(x))
-      for x in handlers if x.login == appinfo.LOGIN_OPTIONAL]
+  loaded_handlers = []
+  for x in handlers:
+    if x.login != appinfo.LOGIN_OPTIONAL:
+      continue
+    if x.script:  # An application, not a static files directive.
+      loaded_handlers.append((x.url, app_for_script(x.script)))
+    else:  # A static files directive, either with static_files or static_dir.
+      loaded_handlers.append(
+          (x.url if x.static_files else static_dir_url(x),
+           static_app_for_handler(x))
+          )
   logging.info('Parsed handlers: %s',
                [url_re for (url_re, _) in loaded_handlers])
   return loaded_handlers
