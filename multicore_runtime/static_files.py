@@ -25,15 +25,15 @@ from werkzeug.wrappers import Response
 from werkzeug.wsgi import wrap_file
 
 
-def static_app_for_regex_and_files(regex, files, upload, mime_type=None):
+def static_app_for_regex_and_files(url_re, files_mapping, upload_re, mime_type=None):
   """Returns a WSGI app that serves static files.
 
   Args:
-    regex: A url-matching regex as specified in appinfo.URLMap.
-    files: A static_files definition as specified in appinfo.URLMap.
+    url_re: A url-matching regex as specified in appinfo.URLMap.
+    files_mapping: A static_files definition as specified in appinfo.URLMap.
       May include a regex backref. See the appinfo.URLMap docstring
       for more information.
-    upload: A filename-matching regex as specified in appinfo.URLMap.
+    upload_re: A filename-matching regex as specified in appinfo.URLMap.
       Only files that match this regex will be served regardless of other
       arguments.
     mime_type: A mime type to apply to all files. If absent,
@@ -45,16 +45,21 @@ def static_app_for_regex_and_files(regex, files, upload, mime_type=None):
   @Request.application  # Transforms wsgi_env, start_response args into request
   def serve_static_files(request):
     """Serve a static file."""
-    # First, match the path against the regex...
-    matcher = re.match(regex, request.path)
-    # ... and use the files regex backref to choose a filename.
-    filename = matcher.expand(files)
+    # First, match the path against the regex.
+    matcher = re.match(url_re, request.path)
+    if not matcher:  # Just for safety - the dispatcher should have matched this
+      logging.error('Static file handler found no match for %s',
+                    request.path)
+      return Response(status=httplib.NOT_FOUND)
+
+    # Use the match and the files regex backref to choose a filename.
+    filename = matcher.expand(files_mapping)
 
     # Check to see if the normalized path matched is in the upload regex.
     # This provides path traversal protection, although apps running on Google
     # servers are protected by the Google frontend (GFE)'s own path traversal
     # protection as well.
-    if not re.match(upload, os.path.normpath(filename)):
+    if not re.match(upload_re, os.path.normpath(filename)):
       logging.warn('Requested filename %s not in `upload`', filename)
       return Response(status=httplib.NOT_FOUND)
 
