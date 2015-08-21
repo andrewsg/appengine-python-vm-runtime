@@ -69,7 +69,7 @@ def load_legacy_scripts_into_handlers(handlers):
       (x.url,
        legacy_app_for_script(x.script.replace('$PYTHON_LIB/', '')))
       for x in handlers]
-  logging.info('Parsed handlers: %s',
+  logging.info('Parsed handlers: %r',
                [url_re for (url_re, _) in loaded_handlers])
   return loaded_handlers
 

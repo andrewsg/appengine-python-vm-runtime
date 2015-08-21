@@ -101,7 +101,7 @@ def static_app_for_handler(handler):
   Returns:
     A static file-serving WSGI app closed over the handler information.
   """
-  regex = handler.url
+  url_re = handler.url  # handler.url is a regex, despite the name.
   files = handler.static_files
   upload = handler.upload
   if not files:
@@ -109,7 +109,7 @@ def static_app_for_handler(handler):
       # If static_files is not set, convert static_dir to static_files and also
       # modify the url regex accordingly. See the appinfo.URLMap docstring for
       # more information.
-      regex = static_dir_url(handler)
+      url_re = static_dir_url(handler)
       files = '{dir}{backref}'.format(dir=handler.static_dir, backref=r'/\1')
       upload = '{dir}{re}'.format(dir=handler.static_dir, re='/.*')
     else:
@@ -117,7 +117,7 @@ def static_app_for_handler(handler):
       logging.error('No script, static_files or static_dir found for %s',
                     handler)
       return None
-  return static_app_for_regex_and_files(regex, files, upload,
+  return static_app_for_regex_and_files(url_re, files, upload,
                                         mime_type=handler.mime_type)
 
 
@@ -156,16 +156,15 @@ def load_user_scripts_into_handlers(handlers):
   # securely.
   loaded_handlers = []
   for x in handlers:
-    if x.login != appinfo.LOGIN_OPTIONAL:
-      continue
-    if x.script:  # An application, not a static files directive.
-      loaded_handlers.append((x.url, app_for_script(x.script)))
-    else:  # A static files directive, either with static_files or static_dir.
-      loaded_handlers.append(
-          (x.url if x.static_files else static_dir_url(x),
-           static_app_for_handler(x))
-          )
-  logging.info('Parsed handlers: %s',
+    if x.login == appinfo.LOGIN_OPTIONAL:
+      if x.script:  # An application, not a static files directive.
+        loaded_handlers.append((x.url, app_for_script(x.script)))
+      else:  # A static files directive, either with static_files or static_dir.
+        loaded_handlers.append(
+            (x.url if x.static_files else static_dir_url(x),
+             static_app_for_handler(x))
+            )
+  logging.info('Parsed handlers: %r',
                [url_re for (url_re, _) in loaded_handlers])
   return loaded_handlers
 
@@ -183,16 +182,18 @@ def env_vars_from_env_config(env_config):
     A dict of strings suitable for e.g. `os.environ.update(values)`.
   """
 
-  return {'SERVER_SOFTWARE': env_config.server_software,
-          'APPENGINE_RUNTIME': 'python27',
-          'APPLICATION_ID': '%s~%s' % (env_config.partition,
-                                       env_config.appid),
-          'INSTANCE_ID': env_config.instance,
-          'BACKEND_ID': env_config.major_version,
-          'CURRENT_MODULE_ID': env_config.module,
-          'CURRENT_VERSION_ID': '%s.%s' % (env_config.major_version,
-                                           env_config.minor_version),
-          'DEFAULT_TICKET': env_config.default_ticket}
+  return {
+      'SERVER_SOFTWARE': env_config.server_software,
+      'APPENGINE_RUNTIME': 'python27',
+      'APPLICATION_ID': '%s~%s' % (env_config.partition,
+                                   env_config.appid),
+      'INSTANCE_ID': env_config.instance,
+      'BACKEND_ID': env_config.major_version,
+      'CURRENT_MODULE_ID': env_config.module,
+      'CURRENT_VERSION_ID': '%s.%s' % (env_config.major_version,
+                                       env_config.minor_version),
+      'DEFAULT_TICKET': env_config.default_ticket,
+      }
 
 
 def user_env_vars_from_appinfo(appinfo_ext):
