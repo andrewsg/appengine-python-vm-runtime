@@ -158,13 +158,15 @@ def load_user_scripts_into_handlers(handlers):
   for handler in handlers:
     if handler.login == appinfo.LOGIN_OPTIONAL:
       if handler.script:  # An application, not a static files directive.
-        loaded_handlers.append((handler.url, app_for_script(handler.script)))
+        url_re = handler.url
+        app = app_for_script(handler.script)
       else:  # A static files directive, either with static_files or static_dir.
         if handler.static_files:
           url_re = handler.url
         else:  # This is a "static_dir" directive.
           url_re = static_dir_url_re(handler)
-        loaded_handlers.append((url_re, static_app_for_handler(handler)))
+        app = static_app_for_handler(handler)
+      loaded_handlers.append((url_re, app))
   logging.info('Parsed handlers: %r',
                [url_re for (url_re, _) in loaded_handlers])
   return loaded_handlers
