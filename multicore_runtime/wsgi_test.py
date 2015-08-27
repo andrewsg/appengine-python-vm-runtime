@@ -20,6 +20,8 @@ import os
 import threading
 import unittest
 
+from . import wsgi_config
+
 from mock import MagicMock
 from mock import patch
 from werkzeug.test import Client
@@ -28,28 +30,41 @@ from werkzeug.wrappers import Response
 
 from google.appengine.api import appinfo
 
+def script_path(script, test_name=__name__):
+  """Returns a fully qualified module path based on test_name."""
+  return '{test_path}.{script}'.format(
+      test_path=test_name, script=script)
+
+def static_path(relative_path, test_path=os.path.dirname(__file__)):
+  """Returns a fully qualified static file path based on test_path."""
+  return '{base}{slash}{relative_path}'.format(
+      base=test_path,
+      slash='/' if test_path else '',
+      relative_path=relative_path)
+
 FAKE_HANDLERS = [
-    appinfo.URLMap(url='/hello', script='wsgi_test.hello_world'),
-    appinfo.URLMap(url='/failure', script='wsgi_test.nonexistent_function'),
-    appinfo.URLMap(url='/env', script='wsgi_test.dump_os_environ'),
-    appinfo.URLMap(url='/sortenv', script='wsgi_test.sort_os_environ_keys'),
-    appinfo.URLMap(url='/setenv', script='wsgi_test.add_to_os_environ'),
-    appinfo.URLMap(url='/wait', script='wsgi_test.wait_on_global_event'),
-    appinfo.URLMap(url='/login', script='wsgi_test.hello_world',
+    appinfo.URLMap(url='/hello', script=script_path('hello_world')),
+    appinfo.URLMap(url='/failure', script=script_path('nonexistent_function')),
+    appinfo.URLMap(url='/env', script=script_path('dump_os_environ')),
+    appinfo.URLMap(url='/sortenv', script=script_path('sort_os_environ_keys')),
+    appinfo.URLMap(url='/setenv', script=script_path('add_to_os_environ')),
+    appinfo.URLMap(url='/wait', script=script_path('wait_on_global_event')),
+    appinfo.URLMap(url='/login', script=script_path('hello_world'),
                    login=appinfo.LOGIN_REQUIRED),
-    appinfo.URLMap(url='/admin', script='wsgi_test.hello_world',
+    appinfo.URLMap(url='/admin', script=script_path('hello_world'),
                    login=appinfo.LOGIN_ADMIN),
     appinfo.URLMap(url='/favicon.ico',
-                   static_files='test_statics/favicon.ico',
-                   upload='test_statics/favicon.ico'),
-    appinfo.URLMap(url='/faketype.ico', static_files='test_statics/favicon.ico',
+                   static_files=static_path('test_statics/favicon.ico'),
+                   upload=static_path('test_statics/favicon.ico')),
+    appinfo.URLMap(url='/faketype.ico',
+                   static_files=static_path('test_statics/favicon.ico'),
                    mime_type='application/fake_type',
-                   upload='test_statics/favicon.ico'),
+                   upload=static_path('test_statics/favicon.ico')),
     appinfo.URLMap(url='/wildcard_statics/(.*)',
-                   static_files=r'test_statics/\1',
-                   upload='test_statics/(.*)'),
+                   static_files=static_path(r'test_statics/\1'),
+                   upload=static_path('test_statics/(.*)')),
     appinfo.URLMap(url='/static_dir',
-                   static_dir='test_statics'),
+                   static_dir=static_path('test_statics')),
     ]
 HELLO_STRING = 'Hello World!'
 
@@ -115,10 +130,10 @@ class MetaAppTestCase(unittest.TestCase):
     from google.appengine.ext.vmruntime import vmconfig  # pylint: disable=unused-variable
 
     # Instantiate an app with a simple fake configuration.
-    with patch('wsgi_config.get_module_config_filename'):
-      with patch('wsgi_config.get_module_config',
+    with patch.object(wsgi_config, 'get_module_config_filename'):
+      with patch.object(wsgi_config, 'get_module_config',
                  return_value=FAKE_APPINFO_EXTERNAL):
-        with patch('google.appengine.ext.vmruntime.vmconfig.BuildVmAppengineEnvConfig',  # pylint: disable=line-too-long
+        with patch.object(vmconfig, 'BuildVmAppengineEnvConfig',
                    return_value=FAKE_APPENGINE_CONFIG):
           import wsgi
           self.app = wsgi.meta_app
@@ -168,20 +183,20 @@ class MetaAppTestCase(unittest.TestCase):
   def test_static_file(self):
     response = self.client.get('/favicon.ico')
     self.assertEqual(response.status_code, httplib.OK)
-    with open('test_statics/favicon.ico') as f:
+    with open(static_path('test_statics/favicon.ico')) as f:
       self.assertEqual(response.data, f.read())
 
   def test_static_file_mime_type(self):
     response = self.client.get('/faketype.ico')
     self.assertEqual(response.status_code, httplib.OK)
-    with open('test_statics/favicon.ico') as f:
+    with open(static_path('test_statics/favicon.ico')) as f:
       self.assertEqual(response.data, f.read())
     self.assertEqual(response.mimetype, 'application/fake_type')
 
   def test_static_file_wildcard(self):
     response = self.client.get('/wildcard_statics/favicon.ico')
     self.assertEqual(response.status_code, httplib.OK)
-    with open('test_statics/favicon.ico') as f:
+    with open(static_path('test_statics/favicon.ico')) as f:
       self.assertEqual(response.data, f.read())
 
   def test_static_file_wildcard_404(self):
@@ -198,7 +213,7 @@ class MetaAppTestCase(unittest.TestCase):
   def test_static_dir(self):
     response = self.client.get('/static_dir/favicon.ico')
     self.assertEqual(response.status_code, httplib.OK)
-    with open('test_statics/favicon.ico') as f:
+    with open(static_path('test_statics/favicon.ico')) as f:
       self.assertEqual(response.data, f.read())
 
   def test_wsgi_vars_in_env(self):

@@ -19,7 +19,7 @@ import runpy
 import threading
 from wsgiref import handlers
 
-import wsgi_config
+from . import wsgi_config
 
 from google.appengine.ext.webapp import util as webapp_util
 

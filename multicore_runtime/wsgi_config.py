@@ -19,7 +19,7 @@ import os
 import threading
 import UserDict
 
-from static_files import static_app_for_regex_and_files
+from . import static_files
 
 from google.appengine.api import appinfo
 from google.appengine.api import appinfo_includes
@@ -117,8 +117,8 @@ def static_app_for_handler(handler):
       logging.error('No script, static_files or static_dir found for %s',
                     handler)
       return None
-  return static_app_for_regex_and_files(url_re, files, upload_re,
-                                        mime_type=handler.mime_type)
+  return static_files.static_app_for_regex_and_files(
+      url_re, files, upload_re, mime_type=handler.mime_type)
 
 
 def static_dir_url_re(handler):

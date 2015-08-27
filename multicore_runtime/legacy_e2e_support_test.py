@@ -20,7 +20,7 @@ from werkzeug.test import Client
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
-import legacy_e2e_support
+from . import legacy_e2e_support
 
 
 class LegacyAppConfigTestCase(unittest.TestCase):
