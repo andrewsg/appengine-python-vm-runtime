@@ -21,6 +21,13 @@ import re
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
+ERROR_TEMPLATE = '<h1>{code} {message}</h1>\n'
+
+def response_for_error(code):
+  return Response(ERROR_TEMPLATE.format(code=code,
+                                        message=httplib.responses[code]),
+                  status=code)
+
 def dispatcher(handlers):
   """Accepts handlers and returns a WSGI app that dispatches requests to them.
 
@@ -45,10 +52,8 @@ def dispatcher(handlers):
         else:
           # The import must have failed. This will have been logged at import
           # time. Send a 500 error response.
-          return Response('<h1>500 Internal Server Error</h1>\n',
-                          status=httplib.INTERNAL_SERVER_ERROR)
+          return response_for_error(httplib.INTERNAL_SERVER_ERROR)
     logging.error('No handler found for %s', request.path)
-    return Response('<h1>404 Not Found</h1>\n',
-                    status=httplib.NOT_FOUND)
+    return response_for_error(httplib.NOT_FOUND)
 
   return dispatch
