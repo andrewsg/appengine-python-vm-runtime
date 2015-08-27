@@ -102,10 +102,9 @@ def wait_on_global_event(request):  # pylint: disable=unused-argument
 @Request.application
 def sort_os_environ_keys(request):  # pylint: disable=unused-argument
   # See test_env_sort method for explanation.
-  resp = ''
-  for name in sorted(os.environ):
-    resp += '%s=%s\n' % (name, os.environ[name])
-  return Response(resp)
+  return Response(''.join(
+      '%s=%s\n' % (k, v) for k, v in sorted(os.environ.iteritems())
+      ))
 
 
 class MetaAppTestCase(unittest.TestCase):

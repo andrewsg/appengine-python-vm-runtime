@@ -150,7 +150,7 @@ def load_user_scripts_into_handlers(handlers):
       - url_re: The url regular expression which matches this handler.
       - app: The fully loaded app corresponding to the script.
   """
-  # `if x.login == appinfo.LOGIN_OPTIONAL` disables loading handlers
+  # `if handler.login == appinfo.LOGIN_OPTIONAL` disables loading handlers
   # that require login or admin status entirely. This is a temporary
   # measure until handling of login-required handlers is implemented
   # securely.
