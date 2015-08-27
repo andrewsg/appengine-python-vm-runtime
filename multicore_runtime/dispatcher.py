@@ -18,16 +18,16 @@ import httplib
 import logging
 import re
 
-from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
+from werkzeug import wrappers
 
 ERROR_TEMPLATE = '<h1>{http_status} {message}</h1>\n'
 
 def response_for_error(http_status):
   """Given an HTTP status code, returns a simple HTML error message."""
-  return Response(ERROR_TEMPLATE.format(http_status=http_status,
-                                        message=httplib.responses[http_status]),
-                  status=http_status)
+  return wrappers.Response(
+      ERROR_TEMPLATE.format(http_status=http_status,
+                            message=httplib.responses[http_status]),
+      status=http_status)
 
 def dispatcher(handlers):
   """Accepts handlers and returns a WSGI app that dispatches requests to them.
@@ -41,7 +41,7 @@ def dispatcher(handlers):
     A WSGI app that dispatches to the user apps specified in the input.
   """
 
-  @Request.application  # Transforms wsgi_env, start_response args into request
+  @wrappers.Request.application  # Transforms wsgi_env, start_response args into request
   def dispatch(request):
     """Handle one request."""
     for url_re, app in handlers:

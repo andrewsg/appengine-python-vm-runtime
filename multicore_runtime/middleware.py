@@ -18,8 +18,7 @@ import httplib
 import logging
 import os
 
-from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
+from werkzeug import wrappers
 
 
 # A dict of reserved env keys; the value is used as the default if not
@@ -61,7 +60,7 @@ def reset_environment_middleware(app, frozen_environment, frozen_user_env,
     The wrapped app, also a WSGI app.
   """
 
-  @Request.application
+  @wrappers.Request.application
   def reset_environment_wrapper(request):
     """Reset the system environment and populate it with wsgi_env."""
     # Wipe os.environ entirely.
@@ -182,11 +181,11 @@ def health_check_middleware(app):
     The wrapped app, also a WSGI app.
   """
 
-  @Request.application
+  @wrappers.Request.application
   def health_check_intercept_wrapper(request):
     """Capture a request to /_ah/health and respond with 200 OK."""
     if request.path == '/_ah/health':  # Only intercept exact matches.
-      return Response('healthy', status=httplib.OK)
+      return wrappers.Response('healthy', status=httplib.OK)
     else:
       return app
 

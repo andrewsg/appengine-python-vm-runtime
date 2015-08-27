@@ -24,9 +24,8 @@ from . import wsgi_config
 
 from mock import MagicMock
 from mock import patch
-from werkzeug.test import Client
-from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
+from werkzeug import test
+from werkzeug import wrappers
 
 from google.appengine.api import appinfo
 
@@ -91,33 +90,33 @@ concurrent_request_should_proceed = threading.Event()
 logging.basicConfig(level=logging.CRITICAL)
 
 
-@Request.application
+@wrappers.Request.application
 def hello_world(request):  # pylint: disable=unused-argument
-  return Response(HELLO_STRING)
+  return wrappers.Response(HELLO_STRING)
 
 
-@Request.application
+@wrappers.Request.application
 def dump_os_environ(request):  # pylint: disable=unused-argument
-  return Response(json.dumps(dict(os.environ)))
+  return wrappers.Response(json.dumps(dict(os.environ)))
 
 
-@Request.application
+@wrappers.Request.application
 def add_to_os_environ(request):  # pylint: disable=unused-argument
   os.environ['ENVIRONMENT_MODIFIED'] = 'TRUE'
-  return Response(json.dumps(dict(os.environ)))
+  return wrappers.Response(json.dumps(dict(os.environ)))
 
 
-@Request.application
+@wrappers.Request.application
 def wait_on_global_event(request):  # pylint: disable=unused-argument
   concurrent_request_is_started.set()
   concurrent_request_should_proceed.wait()
-  return Response(json.dumps(dict(os.environ)))
+  return wrappers.Response(json.dumps(dict(os.environ)))
 
 
-@Request.application
+@wrappers.Request.application
 def sort_os_environ_keys(request):  # pylint: disable=unused-argument
   # See test_env_sort method for explanation.
-  return Response(''.join(
+  return wrappers.Response(''.join(
       '%s=%s\n' % (k, v) for k, v in sorted(os.environ.iteritems())
       ))
 
@@ -137,9 +136,9 @@ class MetaAppTestCase(unittest.TestCase):
                    return_value=FAKE_APPENGINE_CONFIG):
           import wsgi
           self.app = wsgi.meta_app
-    self.client = Client(self.app, Response)
+    self.client = test.Client(self.app, wrappers.Response)
     # Separate client for concurrent tests.
-    self.spare_client = Client(self.app, Response)
+    self.spare_client = test.Client(self.app, wrappers.Response)
 
     # Clear the global event flags (only used in concurrency tests).
     concurrent_request_is_started.clear()

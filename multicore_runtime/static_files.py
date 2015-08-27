@@ -20,9 +20,8 @@ import mimetypes
 import os
 import re
 
-from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
-from werkzeug.wsgi import wrap_file
+from werkzeug import wrappers
+from werkzeug import wsgi
 
 
 def static_app_for_regex_and_files(url_re, files_mapping, upload_re,
@@ -43,7 +42,7 @@ def static_app_for_regex_and_files(url_re, files_mapping, upload_re,
   Returns:
     A static file-serving WSGI app closed over the inputs.
   """
-  @Request.application  # Transforms wsgi_env, start_response args into request
+  @wrappers.Request.application  # Transforms wsgi_env, start_response args into request
   def serve_static_files(request):
     """Serve a static file."""
     # First, match the path against the regex.
@@ -51,7 +50,7 @@ def static_app_for_regex_and_files(url_re, files_mapping, upload_re,
     if not matcher:  # Just for safety - the dispatcher should have matched this
       logging.error('Static file handler found no match for %s',
                     request.path)
-      return Response(status=httplib.NOT_FOUND)
+      return wrappers.Response(status=httplib.NOT_FOUND)
 
     # Use the match and the files regex backref to choose a filename.
     filename = matcher.expand(files_mapping)
@@ -62,7 +61,7 @@ def static_app_for_regex_and_files(url_re, files_mapping, upload_re,
     # protection as well.
     if not re.match(upload_re, os.path.normpath(filename)):
       logging.warn('Requested filename %s not in `upload`', filename)
-      return Response(status=httplib.NOT_FOUND)
+      return wrappers.Response(status=httplib.NOT_FOUND)
 
     try:
       fp = open(filename, 'rb')
@@ -70,9 +69,10 @@ def static_app_for_regex_and_files(url_re, files_mapping, upload_re,
       # directly.
     except IOError:
       logging.warn('Requested non-existent filename %s', filename)
-      return Response(status=httplib.NOT_FOUND)
+      return wrappers.Response(status=httplib.NOT_FOUND)
 
-    wrapped_file = wrap_file(request.environ, fp)
-    return Response(wrapped_file, direct_passthrough=True,
-                    mimetype=mime_type or mimetypes.guess_type(filename)[0])
+    wrapped_file = wsgi.wrap_file(request.environ, fp)
+    return wrappers.Response(
+        wrapped_file, direct_passthrough=True,
+        mimetype=mime_type or mimetypes.guess_type(filename)[0])
   return serve_static_files

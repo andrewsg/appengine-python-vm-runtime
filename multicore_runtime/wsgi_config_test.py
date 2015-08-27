@@ -16,17 +16,16 @@ import httplib
 import unittest
 
 from mock import patch
-from werkzeug.test import Client
-from werkzeug.wrappers import Request
-from werkzeug.wrappers import Response
+from werkzeug import test
+from werkzeug import wrappers
 
 from . import wsgi_config
 from . import wsgi_test
 
-@Request.application
+@wrappers.Request.application
 def salutation_world(request):
   salutation = request.args.get('salutation', 'Hello')
-  return Response('%s World!' % salutation)
+  return wrappers.Response('%s World!' % salutation)
 
 
 def goodbye_world_middleware(app):
@@ -43,7 +42,7 @@ class AppConfigTestCase(unittest.TestCase):
                return_value=None):
       app = wsgi_config.app_for_script(
           wsgi_test.script_path('salutation_world', test_name=__name__))
-    client = Client(app, Response)
+    client = test.Client(app, wrappers.Response)
     response = client.get('/?salutation=Hello')
     self.assertEqual(response.status_code, httplib.OK)
     self.assertEqual(response.data, 'Hello World!')
@@ -53,7 +52,7 @@ class AppConfigTestCase(unittest.TestCase):
                return_value=goodbye_world_middleware):
       app = wsgi_config.app_for_script(
           wsgi_test.script_path('salutation_world', test_name=__name__))
-    client = Client(app, Response)
+    client = test.Client(app, wrappers.Response)
     response = client.get('/?salutation=Hello')
     self.assertEqual(response.status_code, httplib.OK)
     self.assertEqual(response.data, 'Goodbye World!')
