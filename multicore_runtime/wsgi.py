@@ -76,14 +76,12 @@ frozen_user_env = tuple(
 os.environ.update(frozen_user_env)
 os.environ.update(frozen_env_config_env)
 
-# Decide whether to enable support for legacy end-to-end tests. This is intended
-# to be temporary.
-# TODO(apphosting): Modify the end-to-end test runner to make this step
-# unnecessary.
-legacy_e2e = appinfo.vm_settings.get('vm_runtime') == 'python'
-
 # Load user code.
-if legacy_e2e:
+# Also decide whether to enable support for legacy end-to-end tests. This is
+# intended to be temporary.
+# TODO(apphosting): Modify the end-to-end test runner to make this decision
+# unnecessary.
+if appinfo.vm_settings.get('vm_runtime') == 'python':
   import legacy_e2e_support  # pylint: disable=g-import-not-at-top
   preloaded_handlers = legacy_e2e_support.load_legacy_scripts_into_handlers(
       appinfo.handlers)
