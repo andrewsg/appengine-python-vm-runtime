@@ -50,11 +50,11 @@ def app_for_script(script):
   """Returns the WSGI app specified in the input string, or None on failure."""
   try:
     app, unused_filename, err = wsgi.LoadObject(script)
-    if err:
+    if err:  # wsgi.LoadObject guarantees this is either None or ImportError.
       raise err
-  except ImportError as e:
-    # Despite nominally returning an error object, LoadObject will sometimes
-    # just result in an exception. By raising the err object if it exists, we
+  except ImportError:
+    # Despite returning an error object sometimes, LoadObject will other times
+    # just raise an exception. By raising the err object if it exists, we
     # catch either.
     logging.exception('Failed to import %s', script)
     return None
@@ -103,25 +103,25 @@ def static_app_for_handler(handler):
   """
   url_re = handler.url  # handler.url is a regex, despite the name.
   files = handler.static_files
-  upload = handler.upload
+  upload_re = handler.upload
   if not files:
     if handler.static_dir:
       # If static_files is not set, convert static_dir to static_files and also
       # modify the url regex accordingly. See the appinfo.URLMap docstring for
       # more information.
-      url_re = static_dir_url(handler)
-      files = '{dir}{backref}'.format(dir=handler.static_dir, backref=r'/\1')
-      upload = '{dir}{re}'.format(dir=handler.static_dir, re='/.*')
+      url_re = static_dir_url_re(handler)
+      files = r'{dir}/\1'.format(dir=handler.static_dir)
+      upload_re = '{dir}/.*'.format(dir=handler.static_dir)
     else:
       # Neither static_files nor static_dir is set; log an error and return.
       logging.error('No script, static_files or static_dir found for %s',
                     handler)
       return None
-  return static_app_for_regex_and_files(url_re, files, upload,
+  return static_app_for_regex_and_files(url_re, files, upload_re,
                                         mime_type=handler.mime_type)
 
 
-def static_dir_url(handler):
+def static_dir_url_re(handler):
   """Converts a static_dir regex into a static_files regex if needed.
 
   See the appinfo.URLMap docstring for more information.
@@ -133,7 +133,7 @@ def static_dir_url(handler):
     A modified url regex
   """
   if not handler.script and not handler.static_files and handler.static_dir:
-    return '{url}/(.*)'.format(url=handler.url)
+    return '{url_re}/(.*)'.format(url_re=handler.url)
   else:
     return handler.url
 
@@ -155,15 +155,16 @@ def load_user_scripts_into_handlers(handlers):
   # measure until handling of login-required handlers is implemented
   # securely.
   loaded_handlers = []
-  for x in handlers:
-    if x.login == appinfo.LOGIN_OPTIONAL:
-      if x.script:  # An application, not a static files directive.
-        loaded_handlers.append((x.url, app_for_script(x.script)))
+  for handler in handlers:
+    if handler.login == appinfo.LOGIN_OPTIONAL:
+      if handler.script:  # An application, not a static files directive.
+        loaded_handlers.append((handler.url, app_for_script(handler.script)))
       else:  # A static files directive, either with static_files or static_dir.
-        loaded_handlers.append(
-            (x.url if x.static_files else static_dir_url(x),
-             static_app_for_handler(x))
-            )
+        if handler.static_files:
+          url_re = handler.url
+        else:  # This is a "static_dir" directive.
+          url_re = static_dir_url_re(handler)
+        loaded_handlers.append((url_re, static_app_for_handler(handler)))
   logging.info('Parsed handlers: %r',
                [url_re for (url_re, _) in loaded_handlers])
   return loaded_handlers
