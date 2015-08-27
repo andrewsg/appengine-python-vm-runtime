@@ -21,12 +21,13 @@ import re
 from werkzeug.wrappers import Request
 from werkzeug.wrappers import Response
 
-ERROR_TEMPLATE = '<h1>{code} {message}</h1>\n'
+ERROR_TEMPLATE = '<h1>{http_status} {message}</h1>\n'
 
-def response_for_error(code):
-  return Response(ERROR_TEMPLATE.format(code=code,
-                                        message=httplib.responses[code]),
-                  status=code)
+def response_for_error(http_status):
+  """Given an HTTP status code, returns a simple HTML error message."""
+  return Response(ERROR_TEMPLATE.format(http_status=http_status,
+                                        message=httplib.responses[http_status]),
+                  status=http_status)
 
 def dispatcher(handlers):
   """Accepts handlers and returns a WSGI app that dispatches requests to them.
